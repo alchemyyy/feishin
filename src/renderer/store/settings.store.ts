@@ -26,7 +26,7 @@ import { FontValueSchema } from '/@/renderer/types/fonts';
 import { randomString } from '/@/renderer/utils';
 import { sanitizeCss } from '/@/renderer/utils/sanitize';
 import { AppTheme } from '/@/shared/themes/app-theme-types';
-import { LibraryItem, LyricSource } from '/@/shared/types/domain-types';
+import { LibraryItem, LyricSource, SortOrder } from '/@/shared/types/domain-types';
 import {
     FontType,
     ItemListKey,
@@ -155,6 +155,8 @@ const SideQueueTypeSchema = z.enum(['sideDrawerQueue', 'sideQueue']);
 const ArtistCoverStackStyleSchema = z.enum(['spun', 'staggered']);
 
 const ArtistCoverStackDisplayFitSchema = z.enum(['underfit', 'fit', 'overfit']);
+
+const ArtistCoverStackSortSchema = z.enum(['release', 'dateAdded', 'playCount', 'size']);
 
 const SidebarPanelTypeSchema = z.enum(['queue', 'lyrics', 'visualizer']);
 
@@ -406,6 +408,8 @@ export const GeneralSettingsSchema = z.object({
     artistCoverStackMaxFetch: z.number(),
     artistCoverStackPreferArtistCover: z.boolean(),
     artistCoverStackSize: z.number(),
+    artistCoverStackSortBy: ArtistCoverStackSortSchema,
+    artistCoverStackSortOrder: z.nativeEnum(SortOrder),
     artistCoverStackSpunRotation: z.number(),
     artistCoverStackStaggerHeight: z.number(),
     artistCoverStackStaggerWidth: z.number(),
@@ -658,6 +662,13 @@ export enum ArtistCoverStackDisplayFit {
     UNDERFIT = 'underfit',
 }
 
+export enum ArtistCoverStackSort {
+    DATE_ADDED = 'dateAdded',
+    PLAY_COUNT = 'playCount',
+    RELEASE = 'release',
+    SIZE = 'size',
+}
+
 export enum ArtistCoverStackStyle {
     SPUN = 'spun',
     STAGGERED = 'staggered',
@@ -788,6 +799,8 @@ export enum SidebarItem {
 }
 
 export type ArtistCoverStackDisplayFitType = z.infer<typeof ArtistCoverStackDisplayFitSchema>;
+
+export type ArtistCoverStackSortType = z.infer<typeof ArtistCoverStackSortSchema>;
 
 export type ArtistCoverStackStyleType = z.infer<typeof ArtistCoverStackStyleSchema>;
 export type DataGridProps = {
@@ -991,6 +1004,8 @@ const initialState: SettingsState = {
         artistCoverStackMaxFetch: 20,
         artistCoverStackPreferArtistCover: false,
         artistCoverStackSize: 4,
+        artistCoverStackSortBy: ArtistCoverStackSort.RELEASE,
+        artistCoverStackSortOrder: SortOrder.DESC,
         artistCoverStackSpunRotation: 6,
         artistCoverStackStaggerHeight: 5,
         artistCoverStackStaggerWidth: 5,

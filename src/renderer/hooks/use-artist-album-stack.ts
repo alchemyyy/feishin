@@ -5,6 +5,7 @@ import { JellyfinController } from '/@/renderer/api/jellyfin/jellyfin-controller
 import { NavidromeController } from '/@/renderer/api/navidrome/navidrome-controller';
 import { SubsonicController } from '/@/renderer/api/subsonic/subsonic-controller';
 import { useCurrentServerId, useCurrentServerWithCredential } from '/@/renderer/store';
+import { ArtistCoverStackSort, type ArtistCoverStackSortType } from '/@/renderer/store/settings.store';
 import {
     AlbumListSort,
     CoverArtValidator,
@@ -37,12 +38,30 @@ interface ArtistAlbumStackResult {
  * Requires CoverArtValidatorContext to be provided by a parent component.
  * Works with all server types (Navidrome, Subsonic, Jellyfin).
  */
+// Map our sort enum to AlbumListSort
+const mapSortByToAlbumListSort = (sortBy: ArtistCoverStackSortType): AlbumListSort => {
+    switch (sortBy) {
+        case ArtistCoverStackSort.RELEASE:
+            return AlbumListSort.YEAR;
+        case ArtistCoverStackSort.DATE_ADDED:
+            return AlbumListSort.RECENTLY_ADDED;
+        case ArtistCoverStackSort.PLAY_COUNT:
+            return AlbumListSort.PLAY_COUNT;
+        case ArtistCoverStackSort.SIZE:
+            return AlbumListSort.SONG_COUNT;
+        default:
+            return AlbumListSort.YEAR;
+    }
+};
+
 export function useArtistAlbumStack(
     artistId: string | undefined,
     options: {
         enabled: boolean;
         maxAlbums: number;
         preferArtistCover: boolean;
+        sortBy: ArtistCoverStackSortType;
+        sortOrder: SortOrder;
     },
 ): ArtistAlbumStackResult {
     const serverId = useCurrentServerId();
@@ -77,8 +96,8 @@ export function useArtistAlbumStack(
                 query: {
                     artistIds: [artistId],
                     limit: 10, // Fetch a few extra in case some have placeholders
-                    sortBy: AlbumListSort.YEAR,
-                    sortOrder: SortOrder.DESC,
+                    sortBy: mapSortByToAlbumListSort(options.sortBy),
+                    sortOrder: options.sortOrder,
                     startIndex: 0,
                 },
             });
@@ -130,6 +149,8 @@ export function useArtistAlbumStack(
         options.enabled,
         options.maxAlbums,
         options.preferArtistCover,
+        options.sortBy,
+        options.sortOrder,
         isValidatorLoading,
         hasImage,
     ]);

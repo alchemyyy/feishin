@@ -19,14 +19,17 @@ import {
 } from '/@/renderer/features/settings/components/settings-section';
 import {
     ArtistCoverStackDisplayFit,
+    ArtistCoverStackSort,
     ArtistCoverStackStyle,
     type ArtistCoverStackDisplayFitType,
+    type ArtistCoverStackSortType,
     type ArtistCoverStackStyleType,
     SideQueueType,
     useFontSettings,
     useGeneralSettings,
     useSettingsStoreActions,
 } from '/@/renderer/store/settings.store';
+import { SortOrder } from '/@/shared/types/domain-types';
 import { type Font, FONT_OPTIONS } from '/@/renderer/types/fonts';
 import { FileInput } from '/@/shared/components/file-input/file-input';
 import { NumberInput } from '/@/shared/components/number-input/number-input';
@@ -96,6 +99,54 @@ const ARTIST_COVER_STACK_FITMENT_OPTIONS = [
             postProcess: 'sentenceCase',
         }),
         value: ArtistCoverStackDisplayFit.OVERFIT,
+    },
+];
+
+const ARTIST_COVER_STACK_SORT_BY_OPTIONS = [
+    {
+        label: t('setting.artistCoverStackSortBy', {
+            context: 'optionRelease',
+            postProcess: 'sentenceCase',
+        }),
+        value: ArtistCoverStackSort.RELEASE,
+    },
+    {
+        label: t('setting.artistCoverStackSortBy', {
+            context: 'optionDateAdded',
+            postProcess: 'sentenceCase',
+        }),
+        value: ArtistCoverStackSort.DATE_ADDED,
+    },
+    {
+        label: t('setting.artistCoverStackSortBy', {
+            context: 'optionPlayCount',
+            postProcess: 'sentenceCase',
+        }),
+        value: ArtistCoverStackSort.PLAY_COUNT,
+    },
+    {
+        label: t('setting.artistCoverStackSortBy', {
+            context: 'optionSize',
+            postProcess: 'sentenceCase',
+        }),
+        value: ArtistCoverStackSort.SIZE,
+    },
+];
+
+const ARTIST_COVER_STACK_SORT_ORDER_OPTIONS = [
+    {
+        label: t('setting.artistCoverStackSortOrder', {
+            context: 'optionAscending',
+            postProcess: 'sentenceCase',
+        }),
+        value: SortOrder.ASC,
+    },
+    {
+        label: t('setting.artistCoverStackSortOrder', {
+            context: 'optionDescending',
+            postProcess: 'sentenceCase',
+        }),
+        value: SortOrder.DESC,
     },
 ];
 
@@ -591,6 +642,50 @@ export const ApplicationSettings = memo(() => {
             }),
             isHidden: !settings.artistCoverStackEnabled,
             title: t('setting.artistCoverStackSize', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <Select
+                    data={ARTIST_COVER_STACK_SORT_BY_OPTIONS}
+                    defaultValue={settings.artistCoverStackSortBy}
+                    onChange={(e) => {
+                        setSettings({
+                            general: {
+                                ...settings,
+                                artistCoverStackSortBy: e as ArtistCoverStackSortType,
+                            },
+                        });
+                    }}
+                />
+            ),
+            description: t('setting.artistCoverStackSortBy', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden: !settings.artistCoverStackEnabled,
+            title: t('setting.artistCoverStackSortBy', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <Select
+                    data={ARTIST_COVER_STACK_SORT_ORDER_OPTIONS}
+                    defaultValue={settings.artistCoverStackSortOrder}
+                    onChange={(e) => {
+                        setSettings({
+                            general: {
+                                ...settings,
+                                artistCoverStackSortOrder: e as SortOrder,
+                            },
+                        });
+                    }}
+                />
+            ),
+            description: t('setting.artistCoverStackSortOrder', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden: !settings.artistCoverStackEnabled,
+            title: t('setting.artistCoverStackSortOrder', { postProcess: 'sentenceCase' }),
         },
         {
             control: (

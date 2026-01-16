@@ -178,6 +178,8 @@ const CompactItemCard = ({
         enabled: isArtistType && settings.artistCoverStackEnabled,
         maxAlbums: settings.artistCoverStackSize,
         preferArtistCover: settings.artistCoverStackPreferArtistCover,
+        sortBy: settings.artistCoverStackSortBy,
+        sortOrder: settings.artistCoverStackSortOrder,
     });
 
     const artistImageDisplay = getArtistImageDisplay(itemType, settings, albumStackData);
@@ -719,6 +721,8 @@ const PosterItemCard = ({
         enabled: isArtistType && settings.artistCoverStackEnabled,
         maxAlbums: settings.artistCoverStackSize,
         preferArtistCover: settings.artistCoverStackPreferArtistCover,
+        sortBy: settings.artistCoverStackSortBy,
+        sortOrder: settings.artistCoverStackSortOrder,
     });
 
     const artistImageDisplay = getArtistImageDisplay(itemType, settings, albumStackData);
