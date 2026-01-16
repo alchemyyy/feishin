@@ -152,6 +152,10 @@ const GenreTargetSchema = z.enum(['album', 'track']);
 
 const SideQueueTypeSchema = z.enum(['sideDrawerQueue', 'sideQueue']);
 
+const ArtistCoverStackStyleSchema = z.enum(['spun', 'staggered']);
+
+const ArtistCoverStackDisplayFitSchema = z.enum(['underfit', 'fit', 'overfit']);
+
 const SidebarPanelTypeSchema = z.enum(['queue', 'lyrics', 'visualizer']);
 
 const SidebarItemTypeSchema = z.object({
@@ -398,6 +402,21 @@ export const GeneralSettingsSchema = z.object({
     albumBackgroundBlur: z.number(),
     artistBackground: z.boolean(),
     artistBackgroundBlur: z.number(),
+    artistCoverStackEnabled: z.boolean(),
+    artistCoverStackMaxFetch: z.number(),
+    artistCoverStackPreferArtistCover: z.boolean(),
+    artistCoverStackSize: z.number(),
+    artistCoverStackSpunRotation: z.number(),
+    artistCoverStackStaggerHeight: z.number(),
+    artistCoverStackStaggerWidth: z.number(),
+    artistCoverStackStyle: ArtistCoverStackStyleSchema,
+    artistCoverStackStyleSettings: z.record(
+        ArtistCoverStackStyleSchema,
+        z.object({
+            fitment: ArtistCoverStackDisplayFitSchema,
+            overfitSize: z.number(),
+        }),
+    ),
     artistItems: z.array(SortableItemSchema(ArtistItemSchema)),
     artistRadioCount: z.number(),
     artistReleaseTypeItems: z.array(SortableItemSchema(ArtistReleaseTypeItemSchema)),
@@ -633,6 +652,17 @@ export const SettingsStateSchema = ValidationSettingsStateSchema.merge(
     NonValidatedSettingsStateSchema,
 );
 
+export enum ArtistCoverStackDisplayFit {
+    FIT = 'fit',
+    OVERFIT = 'overfit',
+    UNDERFIT = 'underfit',
+}
+
+export enum ArtistCoverStackStyle {
+    SPUN = 'spun',
+    STAGGERED = 'staggered',
+}
+
 export enum ArtistItem {
     BIOGRAPHY = 'biography',
     RECENT_ALBUMS = 'recentAlbums',
@@ -757,6 +787,9 @@ export enum SidebarItem {
     TRACKS = 'Tracks',
 }
 
+export type ArtistCoverStackDisplayFitType = z.infer<typeof ArtistCoverStackDisplayFitSchema>;
+
+export type ArtistCoverStackStyleType = z.infer<typeof ArtistCoverStackStyleSchema>;
 export type DataGridProps = {
     itemGap: 'lg' | 'md' | 'sm' | 'xl' | 'xs';
     itemsPerRow: number;
@@ -766,6 +799,7 @@ export type DataGridProps = {
 };
 
 export type DataTableProps = z.infer<typeof ItemTableListPropsSchema>;
+
 export type ItemListSettings = {
     display: ListDisplayType;
     grid: DataGridProps;
@@ -777,9 +811,7 @@ export type ItemListSettings = {
 export type PlayerFilter = z.infer<typeof PlayerFilterSchema>;
 
 export type PlayerFilterField = z.infer<typeof PlayerFilterFieldSchema>;
-
 export type PlayerFilterOperator = z.infer<typeof PlayerFilterOperatorSchema>;
-
 export interface SettingsSlice extends z.infer<typeof SettingsStateSchema> {
     actions: {
         reset: () => void;
@@ -798,7 +830,9 @@ export interface SettingsSlice extends z.infer<typeof SettingsStateSchema> {
         toggleSidebarCollapseShare: () => void;
     };
 }
+
 export interface SettingsState extends z.infer<typeof SettingsStateSchema> {}
+
 export type SidebarItemType = z.infer<typeof SidebarItemTypeSchema>;
 
 export type SideQueueType = z.infer<typeof SideQueueTypeSchema>;
@@ -953,6 +987,24 @@ const initialState: SettingsState = {
         albumBackgroundBlur: 3,
         artistBackground: true,
         artistBackgroundBlur: 3,
+        artistCoverStackEnabled: false,
+        artistCoverStackMaxFetch: 20,
+        artistCoverStackPreferArtistCover: false,
+        artistCoverStackSize: 4,
+        artistCoverStackSpunRotation: 6,
+        artistCoverStackStaggerHeight: 5,
+        artistCoverStackStaggerWidth: 5,
+        artistCoverStackStyle: ArtistCoverStackStyle.SPUN,
+        artistCoverStackStyleSettings: {
+            [ArtistCoverStackStyle.SPUN]: {
+                fitment: ArtistCoverStackDisplayFit.OVERFIT,
+                overfitSize: 85,
+            },
+            [ArtistCoverStackStyle.STAGGERED]: {
+                fitment: ArtistCoverStackDisplayFit.FIT,
+                overfitSize: 85,
+            },
+        },
         artistItems,
         artistRadioCount: 20,
         artistReleaseTypeItems,

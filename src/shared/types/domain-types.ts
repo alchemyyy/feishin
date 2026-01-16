@@ -1347,6 +1347,9 @@ export type ControllerEndpoint = {
     getArtistList: (args: ArtistListArgs) => Promise<ArtistListResponse>;
     getArtistListCount: (args: ArtistListCountArgs) => Promise<number>;
     getArtistRadio: (args: ArtistRadioArgs) => Promise<Song[]>;
+    getCoverArtValidator?: (
+        args: GetCoverArtValidatorArgs,
+    ) => Promise<GetCoverArtValidatorResponse>;
     getDownloadUrl: (args: DownloadArgs) => string;
     getFolder: (args: FolderArgs) => Promise<FolderResponse>;
     getGenreList: (args: GenreListArgs) => Promise<GenreListResponse>;
@@ -1389,6 +1392,10 @@ export type ControllerEndpoint = {
     updatePlaylist: (args: UpdatePlaylistArgs) => Promise<UpdatePlaylistResponse>;
 };
 
+// Cover art validator types for stacked album covers feature
+// The validator function is created once and captures any server-specific state in its closure
+export type CoverArtValidator = (id: string, itemType: LibraryItem) => Promise<boolean>;
+
 export type DownloadArgs = BaseEndpointArgs & {
     query: DownloadQuery;
 };
@@ -1404,6 +1411,14 @@ export type FontData = {
     fullName: string;
     postscriptName: string;
     style: string;
+};
+
+export type GetCoverArtValidatorArgs = BaseEndpointArgs;
+
+export type GetCoverArtValidatorResponse = {
+    // Function to check if an image exists (is not a placeholder)
+    // Captures server-specific detection state in its closure
+    hasImage: CoverArtValidator;
 };
 
 export type GetQueueArgs = BaseEndpointArgs;
@@ -1469,6 +1484,9 @@ export type InternalControllerEndpoint = {
     getArtistList: (args: ReplaceApiClientProps<ArtistListArgs>) => Promise<ArtistListResponse>;
     getArtistListCount: (args: ReplaceApiClientProps<ArtistListCountArgs>) => Promise<number>;
     getArtistRadio: (args: ReplaceApiClientProps<ArtistRadioArgs>) => Promise<Song[]>;
+    getCoverArtValidator?: (
+        args: ReplaceApiClientProps<GetCoverArtValidatorArgs>,
+    ) => Promise<GetCoverArtValidatorResponse>;
     getDownloadUrl: (args: ReplaceApiClientProps<DownloadArgs>) => string;
     getFolder: (args: ReplaceApiClientProps<FolderArgs>) => Promise<FolderResponse>;
     getGenreList: (args: ReplaceApiClientProps<GenreListArgs>) => Promise<GenreListResponse>;

@@ -18,6 +18,10 @@ import {
     SettingsSection,
 } from '/@/renderer/features/settings/components/settings-section';
 import {
+    ArtistCoverStackDisplayFit,
+    ArtistCoverStackStyle,
+    type ArtistCoverStackDisplayFitType,
+    type ArtistCoverStackStyleType,
     SideQueueType,
     useFontSettings,
     useGeneralSettings,
@@ -51,6 +55,47 @@ const SIDE_QUEUE_OPTIONS = [
             postProcess: 'sentenceCase',
         }),
         value: 'sideDrawerQueue',
+    },
+];
+
+const ARTIST_COVER_STACK_STYLE_OPTIONS = [
+    {
+        label: t('setting.artistCoverStackStyle', {
+            context: 'optionSpun',
+            postProcess: 'sentenceCase',
+        }),
+        value: ArtistCoverStackStyle.SPUN,
+    },
+    {
+        label: t('setting.artistCoverStackStyle', {
+            context: 'optionStaggered',
+            postProcess: 'sentenceCase',
+        }),
+        value: ArtistCoverStackStyle.STAGGERED,
+    },
+];
+
+const ARTIST_COVER_STACK_FITMENT_OPTIONS = [
+    {
+        label: t('setting.artistCoverStackFitment', {
+            context: 'optionUnderfit',
+            postProcess: 'sentenceCase',
+        }),
+        value: ArtistCoverStackDisplayFit.UNDERFIT,
+    },
+    {
+        label: t('setting.artistCoverStackFitment', {
+            context: 'optionFit',
+            postProcess: 'sentenceCase',
+        }),
+        value: ArtistCoverStackDisplayFit.FIT,
+    },
+    {
+        label: t('setting.artistCoverStackFitment', {
+            context: 'optionOverfit',
+            postProcess: 'sentenceCase',
+        }),
+        value: ArtistCoverStackDisplayFit.OVERFIT,
     },
 ];
 
@@ -473,6 +518,261 @@ export const ApplicationSettings = memo(() => {
             }),
             isHidden: false,
             title: t('setting.imageAspectRatio', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <Switch
+                    aria-label={t('setting.artistCoverStack', { postProcess: 'sentenceCase' })}
+                    defaultChecked={settings.artistCoverStackEnabled}
+                    onChange={(e) =>
+                        setSettings({
+                            general: {
+                                ...settings,
+                                artistCoverStackEnabled: e.currentTarget.checked,
+                            },
+                        })
+                    }
+                />
+            ),
+            description: t('setting.artistCoverStack', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden: false,
+            title: t('setting.artistCoverStack', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <Switch
+                    aria-label={t('setting.artistCoverStackPreferArtistCover', {
+                        postProcess: 'sentenceCase',
+                    })}
+                    defaultChecked={settings.artistCoverStackPreferArtistCover}
+                    onChange={(e) =>
+                        setSettings({
+                            general: {
+                                ...settings,
+                                artistCoverStackPreferArtistCover: e.currentTarget.checked,
+                            },
+                        })
+                    }
+                />
+            ),
+            description: t('setting.artistCoverStackPreferArtistCover', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden: !settings.artistCoverStackEnabled,
+            title: t('setting.artistCoverStackPreferArtistCover', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <NumberInput
+                    clampBehavior="blur"
+                    max={10}
+                    min={1}
+                    value={settings.artistCoverStackSize}
+                    onChange={(e) => {
+                        const value = typeof e === 'number' ? e : parseInt(e, 10);
+                        if (!isNaN(value)) {
+                            setSettings({
+                                general: {
+                                    ...settings,
+                                    artistCoverStackSize: value,
+                                },
+                            });
+                        }
+                    }}
+                />
+            ),
+            description: t('setting.artistCoverStackSize', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden: !settings.artistCoverStackEnabled,
+            title: t('setting.artistCoverStackSize', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <Select
+                    data={ARTIST_COVER_STACK_STYLE_OPTIONS}
+                    defaultValue={settings.artistCoverStackStyle}
+                    onChange={(e) => {
+                        setSettings({
+                            general: {
+                                ...settings,
+                                artistCoverStackStyle: e as ArtistCoverStackStyleType,
+                            },
+                        });
+                    }}
+                />
+            ),
+            description: t('setting.artistCoverStackStyle', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden: !settings.artistCoverStackEnabled,
+            title: t('setting.artistCoverStackStyle', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <Select
+                    data={ARTIST_COVER_STACK_FITMENT_OPTIONS}
+                    defaultValue={
+                        settings.artistCoverStackStyleSettings[settings.artistCoverStackStyle]
+                            ?.fitment
+                    }
+                    onChange={(e) => {
+                        setSettings({
+                            general: {
+                                ...settings,
+                                artistCoverStackStyleSettings: {
+                                    ...settings.artistCoverStackStyleSettings,
+                                    [settings.artistCoverStackStyle]: {
+                                        ...settings.artistCoverStackStyleSettings[
+                                            settings.artistCoverStackStyle
+                                        ],
+                                        fitment: e as ArtistCoverStackDisplayFitType,
+                                    },
+                                },
+                            },
+                        });
+                    }}
+                />
+            ),
+            description: t('setting.artistCoverStackFitment', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden: !settings.artistCoverStackEnabled,
+            title: t('setting.artistCoverStackFitment', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <NumberInput
+                    clampBehavior="blur"
+                    max={100}
+                    min={50}
+                    value={
+                        settings.artistCoverStackStyleSettings[settings.artistCoverStackStyle]
+                            ?.overfitSize
+                    }
+                    onChange={(e) => {
+                        const value = typeof e === 'number' ? e : parseInt(e, 10);
+                        if (!isNaN(value)) {
+                            setSettings({
+                                general: {
+                                    ...settings,
+                                    artistCoverStackStyleSettings: {
+                                        ...settings.artistCoverStackStyleSettings,
+                                        [settings.artistCoverStackStyle]: {
+                                            ...settings.artistCoverStackStyleSettings[
+                                                settings.artistCoverStackStyle
+                                            ],
+                                            overfitSize: value,
+                                        },
+                                    },
+                                },
+                            });
+                        }
+                    }}
+                />
+            ),
+            description: t('setting.artistCoverStackOverfitSize', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden:
+                !settings.artistCoverStackEnabled ||
+                settings.artistCoverStackStyleSettings[settings.artistCoverStackStyle]?.fitment !==
+                    ArtistCoverStackDisplayFit.OVERFIT,
+            title: t('setting.artistCoverStackOverfitSize', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <NumberInput
+                    max={45}
+                    min={1}
+                    value={settings.artistCoverStackSpunRotation}
+                    onChange={(e) => {
+                        const value = typeof e === 'number' ? e : parseInt(e, 10);
+                        if (!isNaN(value)) {
+                            setSettings({
+                                general: {
+                                    ...settings,
+                                    artistCoverStackSpunRotation: Math.min(Math.max(value, 1), 45),
+                                },
+                            });
+                        }
+                    }}
+                />
+            ),
+            description: t('setting.artistCoverStackSpunRotation', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden:
+                !settings.artistCoverStackEnabled ||
+                settings.artistCoverStackStyle !== ArtistCoverStackStyle.SPUN,
+            title: t('setting.artistCoverStackSpunRotation', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <NumberInput
+                    clampBehavior="blur"
+                    max={20}
+                    min={0}
+                    value={settings.artistCoverStackStaggerWidth}
+                    onChange={(e) => {
+                        const value = typeof e === 'number' ? e : parseInt(e, 10);
+                        if (!isNaN(value)) {
+                            setSettings({
+                                general: {
+                                    ...settings,
+                                    artistCoverStackStaggerWidth: value,
+                                },
+                            });
+                        }
+                    }}
+                />
+            ),
+            description: t('setting.artistCoverStackStaggerWidth', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden:
+                !settings.artistCoverStackEnabled ||
+                settings.artistCoverStackStyle !== ArtistCoverStackStyle.STAGGERED,
+            title: t('setting.artistCoverStackStaggerWidth', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <NumberInput
+                    clampBehavior="blur"
+                    max={20}
+                    min={0}
+                    value={settings.artistCoverStackStaggerHeight}
+                    onChange={(e) => {
+                        const value = typeof e === 'number' ? e : parseInt(e, 10);
+                        if (!isNaN(value)) {
+                            setSettings({
+                                general: {
+                                    ...settings,
+                                    artistCoverStackStaggerHeight: value,
+                                },
+                            });
+                        }
+                    }}
+                />
+            ),
+            description: t('setting.artistCoverStackStaggerHeight', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden:
+                !settings.artistCoverStackEnabled ||
+                settings.artistCoverStackStyle !== ArtistCoverStackStyle.STAGGERED,
+            title: t('setting.artistCoverStackStaggerHeight', { postProcess: 'sentenceCase' }),
         },
         {
             control: (
