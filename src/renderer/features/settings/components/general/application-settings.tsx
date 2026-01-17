@@ -21,6 +21,7 @@ import {
     ArtistCoverStackDisplayFit,
     ArtistCoverStackSort,
     ArtistCoverStackStyle,
+    ImmediateCardClickAction,
     type ArtistCoverStackDisplayFitType,
     type ArtistCoverStackSortType,
     type ArtistCoverStackStyleType,
@@ -147,6 +148,34 @@ const ARTIST_COVER_STACK_SORT_ORDER_OPTIONS = [
             postProcess: 'sentenceCase',
         }),
         value: SortOrder.DESC,
+    },
+];
+
+const IMMEDIATE_CARD_CLICK_ACTION_OPTIONS = [
+    {
+        label: t('setting.immediateCardClickAction', {
+            context: 'optionNavigate',
+            postProcess: 'sentenceCase',
+        }),
+        value: ImmediateCardClickAction.NAVIGATE,
+    },
+    {
+        label: t('setting.immediateCardClickAction', {
+            context: 'optionPlay',
+            postProcess: 'sentenceCase',
+        }),
+        value: ImmediateCardClickAction.PLAY,
+    },
+];
+
+const IMMEDIATE_CARD_CLICK_ALBUM_ACTION_OPTIONS = [
+    ...IMMEDIATE_CARD_CLICK_ACTION_OPTIONS,
+    {
+        label: t('setting.immediateCardClickAction', {
+            context: 'optionExpand',
+            postProcess: 'sentenceCase',
+        }),
+        value: ImmediateCardClickAction.EXPAND,
     },
 ];
 
@@ -569,6 +598,72 @@ export const ApplicationSettings = memo(() => {
             }),
             isHidden: false,
             title: t('setting.imageAspectRatio', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <Switch
+                    aria-label={t('setting.immediateCardClick', { postProcess: 'sentenceCase' })}
+                    defaultChecked={settings.immediateCardClick}
+                    onChange={(e) =>
+                        setSettings({
+                            general: {
+                                ...settings,
+                                immediateCardClick: e.currentTarget.checked,
+                            },
+                        })
+                    }
+                />
+            ),
+            description: t('setting.immediateCardClick', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden: false,
+            title: t('setting.immediateCardClick', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <Select
+                    data={IMMEDIATE_CARD_CLICK_ALBUM_ACTION_OPTIONS}
+                    defaultValue={settings.immediateCardClickAlbumAction}
+                    onChange={(e) => {
+                        setSettings({
+                            general: {
+                                ...settings,
+                                immediateCardClickAlbumAction: e as ImmediateCardClickAction,
+                            },
+                        });
+                    }}
+                />
+            ),
+            description: t('setting.immediateCardClickAlbumAction', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden: !settings.immediateCardClick,
+            title: t('setting.immediateCardClickAlbumAction', { postProcess: 'sentenceCase' }),
+        },
+        {
+            control: (
+                <Select
+                    data={IMMEDIATE_CARD_CLICK_ACTION_OPTIONS}
+                    defaultValue={settings.immediateCardClickArtistAction}
+                    onChange={(e) => {
+                        setSettings({
+                            general: {
+                                ...settings,
+                                immediateCardClickArtistAction: e as ImmediateCardClickAction,
+                            },
+                        });
+                    }}
+                />
+            ),
+            description: t('setting.immediateCardClickArtistAction', {
+                context: 'description',
+                postProcess: 'sentenceCase',
+            }),
+            isHidden: !settings.immediateCardClick,
+            title: t('setting.immediateCardClickArtistAction', { postProcess: 'sentenceCase' }),
         },
         {
             control: (

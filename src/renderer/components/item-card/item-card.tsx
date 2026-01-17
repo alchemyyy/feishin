@@ -25,6 +25,8 @@ import { useArtistAlbumStack } from '/@/renderer/hooks/use-artist-album-stack';
 import { useDragDrop } from '/@/renderer/hooks/use-drag-drop';
 import { AppRoute } from '/@/renderer/router/routes';
 import { useGeneralSettings, useShowRatings } from '/@/renderer/store';
+import { ImmediateCardClickAction } from '/@/renderer/store/settings.store';
+import { Play } from '/@/shared/types/types';
 import {
     formatDateAbsolute,
     formatDateAbsoluteUTC,
@@ -254,9 +256,23 @@ const CompactItemCard = ({
     const isDraggingState = useItemDraggingState(internalState, itemId);
     const isDragging = isDraggingState || isDraggingLocal;
 
+    // Determine the immediate click action based on item type
+    const isArtistItem = itemType === LibraryItem.ALBUM_ARTIST || itemType === LibraryItem.ARTIST;
+    const isAlbumItem = itemType === LibraryItem.ALBUM;
+    const immediateAction = isArtistItem
+        ? settings.immediateCardClickArtistAction
+        : isAlbumItem
+          ? settings.immediateCardClickAlbumAction
+          : null;
+
     const handleClick = useDoubleClick({
         onDoubleClick: (e: React.MouseEvent<HTMLDivElement>) => {
             if (!data || !controls || !internalState) {
+                return;
+            }
+
+            // If immediate click is enabled for this item type, double click does nothing
+            if (settings.immediateCardClick && immediateAction) {
                 return;
             }
 
@@ -272,13 +288,41 @@ const CompactItemCard = ({
                 return;
             }
 
-            // Don't trigger selection if clicking on interactive elements
+            // Don't trigger if clicking on interactive elements
             const target = e.target as HTMLElement;
             const isInteractiveElement = target.closest(
                 'button, a, input, select, textarea, [role="button"]',
             );
 
             if (isInteractiveElement) {
+                return;
+            }
+
+            // If immediate click is enabled for this item type, perform the configured action
+            if (settings.immediateCardClick && immediateAction) {
+                if (immediateAction === ImmediateCardClickAction.NAVIGATE) {
+                    controls.onDoubleClick?.({
+                        event: e,
+                        internalState,
+                        item: data as any,
+                        itemType,
+                    });
+                } else if (immediateAction === ImmediateCardClickAction.PLAY) {
+                    controls.onPlay?.({
+                        event: e,
+                        internalState,
+                        item: data as any,
+                        itemType,
+                        playType: Play.NOW,
+                    });
+                } else if (immediateAction === ImmediateCardClickAction.EXPAND) {
+                    controls.onExpand?.({
+                        event: e,
+                        internalState,
+                        item: data as any,
+                        itemType,
+                    });
+                }
                 return;
             }
 
@@ -499,9 +543,23 @@ const DefaultItemCard = ({
             : undefined;
     const isSelected = useItemSelectionState(internalState, itemRowId || undefined);
 
+    // Determine the immediate click action based on item type
+    const isArtistItem = itemType === LibraryItem.ALBUM_ARTIST || itemType === LibraryItem.ARTIST;
+    const isAlbumItem = itemType === LibraryItem.ALBUM;
+    const immediateAction = isArtistItem
+        ? settings.immediateCardClickArtistAction
+        : isAlbumItem
+          ? settings.immediateCardClickAlbumAction
+          : null;
+
     const handleClick = useDoubleClick({
         onDoubleClick: (e: React.MouseEvent<HTMLDivElement>) => {
             if (!data || !controls || !internalState) {
+                return;
+            }
+
+            // If immediate click is enabled for this item type, double click does nothing
+            if (settings.immediateCardClick && immediateAction) {
                 return;
             }
 
@@ -517,13 +575,41 @@ const DefaultItemCard = ({
                 return;
             }
 
-            // Don't trigger selection if clicking on interactive elements
+            // Don't trigger if clicking on interactive elements
             const target = e.target as HTMLElement;
             const isInteractiveElement = target.closest(
                 'button, a, input, select, textarea, [role="button"]',
             );
 
             if (isInteractiveElement) {
+                return;
+            }
+
+            // If immediate click is enabled for this item type, perform the configured action
+            if (settings.immediateCardClick && immediateAction) {
+                if (immediateAction === ImmediateCardClickAction.NAVIGATE) {
+                    controls.onDoubleClick?.({
+                        event: e,
+                        internalState,
+                        item: data as any,
+                        itemType,
+                    });
+                } else if (immediateAction === ImmediateCardClickAction.PLAY) {
+                    controls.onPlay?.({
+                        event: e,
+                        internalState,
+                        item: data as any,
+                        itemType,
+                        playType: Play.NOW,
+                    });
+                } else if (immediateAction === ImmediateCardClickAction.EXPAND) {
+                    controls.onExpand?.({
+                        event: e,
+                        internalState,
+                        item: data as any,
+                        itemType,
+                    });
+                }
                 return;
             }
 
@@ -797,9 +883,23 @@ const PosterItemCard = ({
     const isDraggingState = useItemDraggingState(internalState, itemId);
     const isDragging = isDraggingState || isDraggingLocal;
 
+    // Determine the immediate click action based on item type
+    const isArtistItem = itemType === LibraryItem.ALBUM_ARTIST || itemType === LibraryItem.ARTIST;
+    const isAlbumItem = itemType === LibraryItem.ALBUM;
+    const immediateAction = isArtistItem
+        ? settings.immediateCardClickArtistAction
+        : isAlbumItem
+          ? settings.immediateCardClickAlbumAction
+          : null;
+
     const handleClick = useDoubleClick({
         onDoubleClick: (e: React.MouseEvent<HTMLDivElement>) => {
             if (!data || !controls || !internalState) {
+                return;
+            }
+
+            // If immediate click is enabled for this item type, double click does nothing
+            if (settings.immediateCardClick && immediateAction) {
                 return;
             }
 
@@ -815,13 +915,41 @@ const PosterItemCard = ({
                 return;
             }
 
-            // Don't trigger selection if clicking on interactive elements
+            // Don't trigger if clicking on interactive elements
             const target = e.target as HTMLElement;
             const isInteractiveElement = target.closest(
                 'button, a, input, select, textarea, [role="button"]',
             );
 
             if (isInteractiveElement) {
+                return;
+            }
+
+            // If immediate click is enabled for this item type, perform the configured action
+            if (settings.immediateCardClick && immediateAction) {
+                if (immediateAction === ImmediateCardClickAction.NAVIGATE) {
+                    controls.onDoubleClick?.({
+                        event: e,
+                        internalState,
+                        item: data as any,
+                        itemType,
+                    });
+                } else if (immediateAction === ImmediateCardClickAction.PLAY) {
+                    controls.onPlay?.({
+                        event: e,
+                        internalState,
+                        item: data as any,
+                        itemType,
+                        playType: Play.NOW,
+                    });
+                } else if (immediateAction === ImmediateCardClickAction.EXPAND) {
+                    controls.onExpand?.({
+                        event: e,
+                        internalState,
+                        item: data as any,
+                        itemType,
+                    });
+                }
                 return;
             }
 

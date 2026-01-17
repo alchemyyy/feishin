@@ -422,6 +422,9 @@ export const GeneralSettingsSchema = z.object({
         }),
     ),
     artistItems: z.array(SortableItemSchema(ArtistItemSchema)),
+    immediateCardClick: z.boolean(),
+    immediateCardClickAlbumAction: z.enum(['navigate', 'play', 'expand']),
+    immediateCardClickArtistAction: z.enum(['navigate', 'play']),
     artistRadioCount: z.number(),
     artistReleaseTypeItems: z.array(SortableItemSchema(ArtistReleaseTypeItemSchema)),
     buttonSize: z.number(),
@@ -660,6 +663,12 @@ export enum ArtistCoverStackDisplayFit {
     FIT = 'fit',
     OVERFIT = 'overfit',
     UNDERFIT = 'underfit',
+}
+
+export enum ImmediateCardClickAction {
+    EXPAND = 'expand',
+    NAVIGATE = 'navigate',
+    PLAY = 'play',
 }
 
 export enum ArtistCoverStackSort {
@@ -1021,6 +1030,9 @@ const initialState: SettingsState = {
             },
         },
         artistItems,
+        immediateCardClick: false,
+        immediateCardClickAlbumAction: 'navigate',
+        immediateCardClickArtistAction: 'navigate',
         artistRadioCount: 20,
         artistReleaseTypeItems,
         buttonSize: 15,
