@@ -11,6 +11,12 @@ import { AppIcon, Icon, IconProps } from '/@/shared/components/icon/icon';
 import { Tooltip, TooltipProps } from '/@/shared/components/tooltip/tooltip';
 import { createPolymorphicComponent } from '/@/shared/utils/create-polymorphic-component';
 
+const COMPACT_SIZES = ['compact-xs', 'compact-sm', 'compact-md'] as const;
+
+const isCompactSize = (size: number | string | undefined): boolean => {
+    return typeof size === 'string' && COMPACT_SIZES.includes(size as any);
+};
+
 export interface ActionIconProps
     extends ElementProps<'button', keyof MantineActionIconProps>,
         MantineActionIconProps {
@@ -49,12 +55,16 @@ const _ActionIcon = forwardRef<HTMLButtonElement, ActionIconProps>(
             [classNames],
         );
 
-        const actionIconProps: ActionIconProps = {
+        const mantineSize = isCompactSize(size) ? 'sm' : size;
+        const compactSize = isCompactSize(size) ? (size as string) : undefined;
+
+        const actionIconProps: ActionIconProps & { 'data-size'?: string } = {
             classNames: memoizedClassNames,
-            size,
+            size: mantineSize,
             variant,
             ...props,
             onClick: handleClick,
+            ...(compactSize && { 'data-size': compactSize }),
         };
 
         if (tooltip && icon) {

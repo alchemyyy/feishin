@@ -60,19 +60,17 @@ const EXCLUDED_ALBUM_TAGS = new Set<string>([
     'asin',
     'barcode',
     'copyright',
-    'disctotal',
     'encodedby',
     'isrc',
     'key',
     'language',
     'musicbrainz_workid',
     'script',
-    'tracktotal',
     'website',
     'work',
 ]);
 
-const EXCLUDED_SONG_TAGS = new Set<string>([]);
+const EXCLUDED_SONG_TAGS = new Set<string>(['disctotal', 'tracktotal']);
 
 // Tags that use IDs as values as opposed to the tag value
 const ID_TAGS = new Set<string>(['albumversion', 'mood']);
@@ -810,7 +808,7 @@ export const NavidromeController: InternalControllerEndpoint = {
         const { apiClientProps } = args;
 
         if (!hasFeature(apiClientProps.server, ServerFeature.TAGS)) {
-            return { boolTags: undefined, enumTags: undefined, excluded: { album: [], song: [] } };
+            return { excluded: { album: [], song: [] } };
         }
 
         const res = await ndApiClient(apiClientProps).getTagList({
@@ -841,12 +839,16 @@ export const NavidromeController: InternalControllerEndpoint = {
             }
         }
 
-        const enumTags = Array.from(tagsToValues)
+        const tags = Array.from(tagsToValues)
             .map((data) => ({
                 name: data[0],
                 options: data[1]
                     .sort((a, b) =>
-                        a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase()),
+                        a.name
+                            .toLocaleLowerCase()
+                            .localeCompare(b.name.toLocaleLowerCase(), undefined, {
+                                numeric: true,
+                            }),
                     )
                     .map((option) => ({ id: option.id, name: option.name })),
             }))
@@ -856,12 +858,11 @@ export const NavidromeController: InternalControllerEndpoint = {
         const excludedSongTags = Array.from(EXCLUDED_SONG_TAGS.values());
 
         return {
-            boolTags: undefined,
-            enumTags,
             excluded: {
                 album: excludedAlbumTags,
                 song: excludedSongTags,
             },
+            tags,
         };
     },
     getTopSongs: SubsonicController.getTopSongs,

@@ -1707,73 +1707,14 @@ const initialState: SettingsState = {
     },
 };
 
-// Helper function to create a deep clone of initialState
-const getInitialState = (): SettingsState => {
-    const freshHomeItems = Object.values(HomeItem).map((item) => ({
-        disabled: false,
-        id: item,
-    }));
-
-    const freshArtistItems = Object.values(ArtistItem).map((item) => ({
-        disabled: false,
-        id: item,
-    }));
-
-    const freshArtistReleaseTypeItems = Object.values(ArtistReleaseTypeItem).map((item) => ({
-        disabled: false,
-        id: item,
-    }));
-
-    // Deep clone using JSON to ensure all nested objects/arrays are fresh copies
-    const clonedState = JSON.parse(JSON.stringify(initialState)) as SettingsState;
-
-    // Replace arrays that need fresh references
-    clonedState.general.homeItems = freshHomeItems;
-    clonedState.general.artistItems = freshArtistItems;
-    clonedState.general.artistReleaseTypeItems = freshArtistReleaseTypeItems;
-    clonedState.general.sidebarItems = JSON.parse(
-        JSON.stringify(sidebarItems),
-    ) as SidebarItemType[];
-
-    // Regenerate random password for remote settings
-    clonedState.remote.password = randomString(8);
-
-    return clonedState;
-};
-
 export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
     persist(
         devtools(
             immer((set) => ({
                 actions: {
                     reset: () => {
-                        const freshState = getInitialState();
-                        set((state) => {
-                            // Deep clone the fresh state to ensure all nested objects/arrays are new references
-                            const resetState = JSON.parse(
-                                JSON.stringify(freshState),
-                            ) as SettingsState;
-
-                            // Override playback type for web if not electron
-                            if (!isElectron()) {
-                                resetState.playback.type = PlayerType.WEB;
-                            }
-
-                            // Replace all state properties (except actions) with the reset state
-                            state.css = resetState.css;
-                            state.discord = resetState.discord;
-                            state.font = resetState.font;
-                            state.general = resetState.general;
-                            state.hotkeys = resetState.hotkeys;
-                            state.lists = resetState.lists;
-                            state.lyrics = resetState.lyrics;
-                            state.playback = resetState.playback;
-                            state.queryBuilder = resetState.queryBuilder;
-                            state.remote = resetState.remote;
-                            state.tab = resetState.tab;
-                            state.visualizer = resetState.visualizer;
-                            state.window = resetState.window;
-                        });
+                        localStorage.removeItem('store_settings');
+                        window.location.reload();
                     },
                     resetSampleRate: () => {
                         set((state) => {
@@ -2037,10 +1978,94 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     }
                 }
 
+                if (version <= 20) {
+                    // Add TITLE_ARTIST column to SONG and ALBUM table configs
+                    const titleArtistColumn: ItemTableListColumnConfig = {
+                        align: 'start',
+                        autoSize: false,
+                        id: TableColumn.TITLE_ARTIST,
+                        isEnabled: false,
+                        pinned: null,
+                        width: 300,
+                    };
+
+                    const listKeysToUpdate: (LibraryItem | string)[] = [
+                        LibraryItem.SONG,
+                        LibraryItem.ALBUM,
+                        LibraryItem.PLAYLIST_SONG,
+                        LibraryItem.QUEUE_SONG,
+                        ItemListKey.ALBUM_DETAIL,
+                        ItemListKey.FULL_SCREEN,
+                        ItemListKey.SIDE_QUEUE,
+                    ];
+
+                    listKeysToUpdate.forEach((listKey) => {
+                        const listConfig = state.lists[listKey];
+                        if (listConfig?.table?.columns) {
+                            const columns = listConfig.table.columns;
+                            const hasTitleArtist = columns.some(
+                                (col) => col.id === TableColumn.TITLE_ARTIST,
+                            );
+                            if (!hasTitleArtist) {
+                                const titleCombinedIndex = columns.findIndex(
+                                    (col) => col.id === TableColumn.TITLE_COMBINED,
+                                );
+                                if (titleCombinedIndex >= 0) {
+                                    columns.splice(titleCombinedIndex + 1, 0, titleArtistColumn);
+                                } else {
+                                    columns.push(titleArtistColumn);
+                                }
+                            }
+                        }
+                    });
+                }
+
+                if (version <= 21) {
+                    // Add COMPOSER column to SONG and ALBUM table configs
+                    const composerColumn: ItemTableListColumnConfig = {
+                        align: 'start',
+                        autoSize: false,
+                        id: TableColumn.COMPOSER,
+                        isEnabled: false,
+                        pinned: null,
+                        width: 300,
+                    };
+
+                    const listKeysToUpdate: (LibraryItem | string)[] = [
+                        LibraryItem.SONG,
+                        LibraryItem.ALBUM,
+                        LibraryItem.PLAYLIST_SONG,
+                        LibraryItem.QUEUE_SONG,
+                        ItemListKey.ALBUM_DETAIL,
+                        ItemListKey.FULL_SCREEN,
+                        ItemListKey.SIDE_QUEUE,
+                    ];
+
+                    listKeysToUpdate.forEach((listKey) => {
+                        const listConfig = state.lists[listKey];
+                        if (listConfig?.table?.columns) {
+                            const columns = listConfig.table.columns;
+                            const hasComposer = columns.some(
+                                (col) => col.id === TableColumn.COMPOSER,
+                            );
+                            if (!hasComposer) {
+                                const artistIndex = columns.findIndex(
+                                    (col) => col.id === TableColumn.ARTIST,
+                                );
+                                if (artistIndex >= 0) {
+                                    columns.splice(artistIndex + 1, 0, composerColumn);
+                                } else {
+                                    columns.push(composerColumn);
+                                }
+                            }
+                        }
+                    });
+                }
+
                 return persistedState;
             },
             name: 'store_settings',
-            version: 20,
+            version: 22,
         },
     ),
 );

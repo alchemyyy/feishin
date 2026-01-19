@@ -100,7 +100,7 @@ export async function getLyricsBySongId(url: string): Promise<null | string> {
     try {
         result = await axios.get<string>(url, { responseType: 'text' });
     } catch (e) {
-        console.error('Genius lyrics request got an error!', e);
+        console.error('Genius lyrics request got an error!', (e as Error)?.message);
         return null;
     }
 
@@ -138,7 +138,7 @@ export async function getSearchResults(
             },
         });
     } catch (e) {
-        console.error('Genius search request got an error!', e);
+        console.error('Genius search request got an error!', (e as Error)?.message);
         return null;
     }
 
@@ -150,6 +150,7 @@ export async function getSearchResults(
         return {
             artist: song.artist_names,
             id: song.url,
+            isSync: null,
             name: song.full_title,
             source: LyricSource.GENIUS,
         };
@@ -163,13 +164,11 @@ export async function query(
 ): Promise<InternetProviderLyricResponse | null> {
     const response = await getSongId(params);
     if (!response) {
-        console.error('Could not find the song on Genius!');
         return null;
     }
 
     const lyrics = await getLyricsBySongId(response.id);
     if (!lyrics) {
-        console.error('Could not get lyrics on Genius!');
         return null;
     }
 
@@ -194,7 +193,7 @@ async function getSongId(
             },
         });
     } catch (e) {
-        console.error('Genius search request got an error!', e);
+        console.error('Genius search request got an error!', (e as Error)?.message);
         return null;
     }
 

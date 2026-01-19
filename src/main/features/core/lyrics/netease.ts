@@ -128,6 +128,7 @@ export async function getSearchResults(
         return {
             artist,
             id: String(song.id),
+            isSync: null,
             name: song.name,
             source: LyricSource.NETEASE,
         };
@@ -141,13 +142,11 @@ export async function query(
 ): Promise<InternetProviderLyricResponse | null> {
     const lyricsMatch = await getMatchedLyrics(params);
     if (!lyricsMatch) {
-        console.error('Could not find the song on NetEase!');
         return null;
     }
 
     const lyrics = await getLyricsBySongId(lyricsMatch.id);
     if (!lyrics) {
-        console.error('Could not get lyrics on NetEase!');
         return null;
     }
 

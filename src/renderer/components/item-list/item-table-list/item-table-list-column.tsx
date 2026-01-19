@@ -26,6 +26,7 @@ import { ActionsColumn } from '/@/renderer/components/item-list/item-table-list/
 import { AlbumArtistsColumn } from '/@/renderer/components/item-list/item-table-list/columns/album-artists-column';
 import { AlbumColumn } from '/@/renderer/components/item-list/item-table-list/columns/album-column';
 import { ArtistsColumn } from '/@/renderer/components/item-list/item-table-list/columns/artists-column';
+import { ComposerColumn } from '/@/renderer/components/item-list/item-table-list/columns/composer-column';
 import { CountColumn } from '/@/renderer/components/item-list/item-table-list/columns/count-column';
 import {
     AbsoluteDateColumn,
@@ -45,6 +46,7 @@ import { RatingColumn } from '/@/renderer/components/item-list/item-table-list/c
 import { RowIndexColumn } from '/@/renderer/components/item-list/item-table-list/columns/row-index-column';
 import { SizeColumn } from '/@/renderer/components/item-list/item-table-list/columns/size-column';
 import { TextColumn } from '/@/renderer/components/item-list/item-table-list/columns/text-column';
+import { TitleArtistColumn } from '/@/renderer/components/item-list/item-table-list/columns/title-artist-column';
 import { TitleColumn } from '/@/renderer/components/item-list/item-table-list/columns/title-column';
 import { TitleCombinedColumn } from '/@/renderer/components/item-list/item-table-list/columns/title-combined-column';
 import { YearColumn } from '/@/renderer/components/item-list/item-table-list/columns/year-column';
@@ -84,7 +86,9 @@ export const ItemTableListColumn = (props: ItemTableListColumn) => {
 
     const isHeaderEnabled = !!props.enableHeader;
     const isDataRow = isHeaderEnabled ? props.rowIndex > 0 : true;
-    const item = isDataRow ? props.data[props.rowIndex] : null;
+    const item = isDataRow
+        ? (props.getRowItem?.(props.rowIndex) ?? props.data[props.rowIndex])
+        : null;
     const shouldEnableDrag = !!props.enableDrag && isDataRow && !!item;
     const itemType = (item as unknown as { _itemType?: LibraryItem })?._itemType || props.itemType;
 
@@ -93,44 +97,33 @@ export const ItemTableListColumn = (props: ItemTableListColumn) => {
     // to maintain proper styling and row heights
     let groupHeader: 'GROUP_HEADER' | null | ReactElement = null;
     if (props.groups && isDataRow && props.groups.length > 0) {
-        // Calculate which group this row index belongs to
-        let cumulativeDataIndex = 0;
-        const headerOffset = props.enableHeader ? 1 : 0;
+        const groupInfo = props.groupHeaderInfoByRowIndex?.get(props.rowIndex);
+        const group = groupInfo ? props.groups[groupInfo.groupIndex] : undefined;
 
-        const originalData = props.data.filter((item) => item !== null);
+        if (groupInfo && group) {
+            // Determine where to render the group header content:
+            // - If pinned left columns exist, render in the first pinned left column
+            // - Otherwise, render in the first column of the main grid
+            const hasPinnedLeftColumns = (props.pinnedLeftColumnCount || 0) > 0;
+            const isFirstPinnedLeftColumn = props.columnIndex === 0 && hasPinnedLeftColumns;
+            const isMainGridFirstColumn =
+                !hasPinnedLeftColumns &&
+                (props.columnIndex === (props.pinnedLeftColumnCount || 0) ||
+                    (props.columnIndex === 0 && (props.pinnedLeftColumnCount || 0) === 0));
 
-        for (let groupIndex = 0; groupIndex < props.groups.length; groupIndex++) {
-            const group = props.groups[groupIndex];
-            const groupHeaderIndex = headerOffset + cumulativeDataIndex + groupIndex;
-
-            if (props.rowIndex === groupHeaderIndex) {
-                // Determine where to render the group header content:
-                // - If pinned left columns exist, render in the first pinned left column
-                // - Otherwise, render in the first column of the main grid
-                const hasPinnedLeftColumns = (props.pinnedLeftColumnCount || 0) > 0;
-                const isFirstPinnedLeftColumn = props.columnIndex === 0 && hasPinnedLeftColumns;
-                const isMainGridFirstColumn =
-                    !hasPinnedLeftColumns &&
-                    (props.columnIndex === (props.pinnedLeftColumnCount || 0) ||
-                        (props.columnIndex === 0 && (props.pinnedLeftColumnCount || 0) === 0));
-
-                // Render group header content in the first pinned left column (if exists) or first main grid column
-                if (isFirstPinnedLeftColumn || isMainGridFirstColumn) {
-                    groupHeader = group.render({
-                        data: originalData,
-                        groupIndex,
-                        index: props.rowIndex,
-                        internalState: props.internalState,
-                        startDataIndex: cumulativeDataIndex,
-                    });
-                } else {
-                    // For other columns, mark as group header row for styled rendering
-                    groupHeader = 'GROUP_HEADER';
-                }
-                break;
+            // Render group header content in the first pinned left column (if exists) or first main grid column
+            if (isFirstPinnedLeftColumn || isMainGridFirstColumn) {
+                groupHeader = group.render({
+                    data: props.getGroupRenderData?.() ?? [],
+                    groupIndex: groupInfo.groupIndex,
+                    index: props.rowIndex,
+                    internalState: props.internalState,
+                    startDataIndex: groupInfo.startDataIndex,
+                });
+            } else {
+                // For other columns, mark as group header row for styled rendering
+                groupHeader = 'GROUP_HEADER';
             }
-
-            cumulativeDataIndex += group.itemCount;
         }
     }
 
@@ -490,6 +483,9 @@ export const ItemTableListColumn = (props: ItemTableListColumn) => {
             case TableColumn.TRACK_NUMBER:
                 return <NumericColumn {...props} {...dragProps} controls={controls} type={type} />;
 
+            case TableColumn.COMPOSER:
+                return <ComposerColumn {...props} {...dragProps} controls={controls} type={type} />;
+
             case TableColumn.DATE_ADDED:
                 return <DateColumn {...props} {...dragProps} controls={controls} type={type} />;
 
@@ -532,6 +528,11 @@ export const ItemTableListColumn = (props: ItemTableListColumn) => {
             case TableColumn.TITLE:
                 return <TitleColumn {...props} {...dragProps} controls={controls} type={type} />;
 
+            case TableColumn.TITLE_ARTIST:
+                return (
+                    <TitleArtistColumn {...props} {...dragProps} controls={controls} type={type} />
+                );
+
             case TableColumn.TITLE_COMBINED:
                 return (
                     <TitleCombinedColumn
@@ -569,6 +570,9 @@ export const ItemTableListColumn = (props: ItemTableListColumn) => {
         case TableColumn.TITLE:
             return <TitleColumn {...props} {...dragProps} controls={controls} type={type} />;
 
+        case TableColumn.TITLE_ARTIST:
+            return <TitleArtistColumn {...props} {...dragProps} controls={controls} type={type} />;
+
         case TableColumn.TITLE_COMBINED:
             return (
                 <TitleCombinedColumn {...props} {...dragProps} controls={controls} type={type} />
@@ -579,7 +583,7 @@ export const ItemTableListColumn = (props: ItemTableListColumn) => {
     }
 };
 
-const NonMutedColumns = [TableColumn.TITLE, TableColumn.TITLE_COMBINED];
+const NonMutedColumns = [TableColumn.TITLE, TableColumn.TITLE_ARTIST, TableColumn.TITLE_COMBINED];
 
 export const TableColumnTextContainer = (
     props: ItemTableListColumn & {
@@ -596,7 +600,9 @@ export const TableColumnTextContainer = (
     const containerRef = useRef<HTMLDivElement>(null);
     const isDataRow = props.enableHeader ? props.rowIndex > 0 : true;
     const dataIndex = props.enableHeader ? props.rowIndex - 1 : props.rowIndex;
-    const item = isDataRow ? props.data[props.rowIndex] : null;
+    const item = isDataRow
+        ? (props.getRowItem?.(props.rowIndex) ?? props.data[props.rowIndex])
+        : null;
     const itemRowId =
         item && typeof item === 'object' && 'id' in item
             ? props.internalState.extractRowId(item)
@@ -613,121 +619,22 @@ export const TableColumnTextContainer = (
             ? props.rowIndex === props.data.length
             : props.rowIndex === props.data.length - 1);
 
-    useEffect(() => {
-        if (!isDataRow || !containerRef.current || !props.enableRowHoverHighlight) return;
-
-        const container = containerRef.current;
-        const rowIndex = props.rowIndex;
-        const rowSelector = `[data-row-index="${props.tableId}-${rowIndex}"]`;
-        let rafId: null | number = null;
-        let cachedCells: NodeListOf<Element> | null = null;
-
-        const getCells = () => {
-            if (!cachedCells) {
-                cachedCells = document.querySelectorAll(rowSelector);
-            }
-            return cachedCells;
-        };
-
-        const handleMouseEnter = () => {
-            if (rafId !== null) {
-                cancelAnimationFrame(rafId);
-            }
-            rafId = requestAnimationFrame(() => {
-                const cells = getCells();
-                cells.forEach((cell) => cell.classList.add(styles.rowHovered));
-            });
-        };
-
-        const handleMouseLeave = () => {
-            if (rafId !== null) {
-                cancelAnimationFrame(rafId);
-            }
-            rafId = requestAnimationFrame(() => {
-                const cells = getCells();
-                cells.forEach((cell) => cell.classList.remove(styles.rowHovered));
-                cachedCells = null;
-            });
-        };
-
-        container.addEventListener('mouseenter', handleMouseEnter);
-        container.addEventListener('mouseleave', handleMouseLeave);
-
-        return () => {
-            if (rafId !== null) {
-                cancelAnimationFrame(rafId);
-            }
-            container.removeEventListener('mouseenter', handleMouseEnter);
-            container.removeEventListener('mouseleave', handleMouseLeave);
-            cachedCells = null;
-        };
-    }, [isDataRow, props.rowIndex, props.enableRowHoverHighlight, props.tableId]);
-
     // Apply dragged over state to all cells in the row so border can span entire row
     useEffect(() => {
         if (!isDataRow || !containerRef.current) return;
+        const rowKey = `${props.tableId}-${props.rowIndex}`;
+        const edge =
+            props.isDraggedOver === 'top' || props.isDraggedOver === 'bottom'
+                ? props.isDraggedOver
+                : null;
 
-        const rowIndex = props.rowIndex;
-        const draggedOverState = props.isDraggedOver;
-        const rowSelector = `[data-row-index="${props.tableId}-${rowIndex}"]`;
-        let rafId: null | number = null;
-        let cachedCells: NodeListOf<Element> | null = null;
-
-        const getCells = () => {
-            if (!cachedCells) {
-                cachedCells = document.querySelectorAll(rowSelector);
-            }
-            return cachedCells;
-        };
-
-        if (rafId !== null) {
-            cancelAnimationFrame(rafId);
-        }
-
-        rafId = requestAnimationFrame(() => {
-            const cells = getCells();
-
-            if (draggedOverState) {
-                cells.forEach((cell, index) => {
-                    if (draggedOverState === 'top') {
-                        cell.classList.add(styles.draggedOverTop);
-                        cell.classList.remove(styles.draggedOverBottom);
-                        // Mark first cell so border can span full width
-                        if (index === 0) {
-                            cell.classList.add(styles.draggedOverFirstCell);
-                        } else {
-                            cell.classList.remove(styles.draggedOverFirstCell);
-                        }
-                    } else if (draggedOverState === 'bottom') {
-                        cell.classList.add(styles.draggedOverBottom);
-                        cell.classList.remove(styles.draggedOverTop);
-                        // Mark first cell so border can span full width
-                        if (index === 0) {
-                            cell.classList.add(styles.draggedOverFirstCell);
-                        } else {
-                            cell.classList.remove(styles.draggedOverFirstCell);
-                        }
-                    }
-                });
-            } else {
-                // Remove dragged over classes from all cells in the same row
-                cells.forEach((cell) => {
-                    cell.classList.remove(styles.draggedOverTop);
-                    cell.classList.remove(styles.draggedOverBottom);
-                    cell.classList.remove(styles.draggedOverFirstCell);
-                });
-                // Clear cache when state is cleared
-                cachedCells = null;
-            }
-        });
-
-        return () => {
-            if (rafId !== null) {
-                cancelAnimationFrame(rafId);
-            }
-            cachedCells = null;
-        };
-    }, [isDataRow, props.rowIndex, props.isDraggedOver, props.tableId]);
+        containerRef.current.dispatchEvent(
+            new CustomEvent('itl:row-drag-over', {
+                bubbles: true,
+                detail: { edge, rowKey },
+            }),
+        );
+    }, [isDataRow, props.isDraggedOver, props.rowIndex, props.tableId]);
 
     const handleClick = useDoubleClick({
         onDoubleClick: (event: React.MouseEvent<HTMLDivElement>) => {
@@ -793,8 +700,6 @@ export const TableColumnTextContainer = (
                 [styles.center]: props.columns[props.columnIndex].align === 'center',
                 [styles.compact]: props.size === 'compact',
                 [styles.dataRow]: isDataRow,
-                [styles.draggedOverBottom]: isDataRow && props.isDraggedOver === 'bottom',
-                [styles.draggedOverTop]: isDataRow && props.isDraggedOver === 'top',
                 [styles.dragging]: isDataRow && isDragging,
                 [styles.large]: props.size === 'large',
                 [styles.left]: props.columns[props.columnIndex].align === 'start',
@@ -848,7 +753,9 @@ export const TableColumnContainer = (
     const containerRef = useRef<HTMLDivElement>(null);
     const isDataRow = props.enableHeader ? props.rowIndex > 0 : true;
     const dataIndex = props.enableHeader ? props.rowIndex - 1 : props.rowIndex;
-    const item = isDataRow ? props.data[props.rowIndex] : null;
+    const item = isDataRow
+        ? (props.getRowItem?.(props.rowIndex) ?? props.data[props.rowIndex])
+        : null;
     const itemRowId =
         item && typeof item === 'object' && 'id' in item
             ? props.internalState.extractRowId(item)
@@ -865,121 +772,22 @@ export const TableColumnContainer = (
             ? props.rowIndex === props.data.length
             : props.rowIndex === props.data.length - 1);
 
-    useEffect(() => {
-        if (!isDataRow || !containerRef.current || !props.enableRowHoverHighlight) return;
-
-        const container = containerRef.current;
-        const rowIndex = props.rowIndex;
-        const rowSelector = `[data-row-index="${props.tableId}-${rowIndex}"]`;
-        let rafId: null | number = null;
-        let cachedCells: NodeListOf<Element> | null = null;
-
-        const getCells = () => {
-            if (!cachedCells) {
-                cachedCells = document.querySelectorAll(rowSelector);
-            }
-            return cachedCells;
-        };
-
-        const handleMouseEnter = () => {
-            if (rafId !== null) {
-                cancelAnimationFrame(rafId);
-            }
-            rafId = requestAnimationFrame(() => {
-                const cells = getCells();
-                cells.forEach((cell) => cell.classList.add(styles.rowHovered));
-            });
-        };
-
-        const handleMouseLeave = () => {
-            if (rafId !== null) {
-                cancelAnimationFrame(rafId);
-            }
-            rafId = requestAnimationFrame(() => {
-                const cells = getCells();
-                cells.forEach((cell) => cell.classList.remove(styles.rowHovered));
-                cachedCells = null;
-            });
-        };
-
-        container.addEventListener('mouseenter', handleMouseEnter);
-        container.addEventListener('mouseleave', handleMouseLeave);
-
-        return () => {
-            if (rafId !== null) {
-                cancelAnimationFrame(rafId);
-            }
-            container.removeEventListener('mouseenter', handleMouseEnter);
-            container.removeEventListener('mouseleave', handleMouseLeave);
-            cachedCells = null;
-        };
-    }, [isDataRow, props.rowIndex, props.enableRowHoverHighlight, props.tableId]);
-
     // Apply dragged over state to all cells in the row so border can span entire row
     useEffect(() => {
         if (!isDataRow || !containerRef.current) return;
+        const rowKey = `${props.tableId}-${props.rowIndex}`;
+        const edge =
+            props.isDraggedOver === 'top' || props.isDraggedOver === 'bottom'
+                ? props.isDraggedOver
+                : null;
 
-        const rowIndex = props.rowIndex;
-        const draggedOverState = props.isDraggedOver;
-        const rowSelector = `[data-row-index="${props.tableId}-${rowIndex}"]`;
-        let rafId: null | number = null;
-        let cachedCells: NodeListOf<Element> | null = null;
-
-        const getCells = () => {
-            if (!cachedCells) {
-                cachedCells = document.querySelectorAll(rowSelector);
-            }
-            return cachedCells;
-        };
-
-        if (rafId !== null) {
-            cancelAnimationFrame(rafId);
-        }
-
-        rafId = requestAnimationFrame(() => {
-            const cells = getCells();
-
-            if (draggedOverState) {
-                cells.forEach((cell, index) => {
-                    if (draggedOverState === 'top') {
-                        cell.classList.add(styles.draggedOverTop);
-                        cell.classList.remove(styles.draggedOverBottom);
-                        // Mark first cell so border can span full width
-                        if (index === 0) {
-                            cell.classList.add(styles.draggedOverFirstCell);
-                        } else {
-                            cell.classList.remove(styles.draggedOverFirstCell);
-                        }
-                    } else if (draggedOverState === 'bottom') {
-                        cell.classList.add(styles.draggedOverBottom);
-                        cell.classList.remove(styles.draggedOverTop);
-                        // Mark first cell so border can span full width
-                        if (index === 0) {
-                            cell.classList.add(styles.draggedOverFirstCell);
-                        } else {
-                            cell.classList.remove(styles.draggedOverFirstCell);
-                        }
-                    }
-                });
-            } else {
-                // Remove dragged over classes from all cells in the same row
-                cells.forEach((cell) => {
-                    cell.classList.remove(styles.draggedOverTop);
-                    cell.classList.remove(styles.draggedOverBottom);
-                    cell.classList.remove(styles.draggedOverFirstCell);
-                });
-                // Clear cache when state is cleared
-                cachedCells = null;
-            }
-        });
-
-        return () => {
-            if (rafId !== null) {
-                cancelAnimationFrame(rafId);
-            }
-            cachedCells = null;
-        };
-    }, [isDataRow, props.rowIndex, props.isDraggedOver, props.tableId]);
+        containerRef.current.dispatchEvent(
+            new CustomEvent('itl:row-drag-over', {
+                bubbles: true,
+                detail: { edge, rowKey },
+            }),
+        );
+    }, [isDataRow, props.isDraggedOver, props.rowIndex, props.tableId]);
 
     const handleClick = useDoubleClick({
         onDoubleClick: (event: React.MouseEvent<HTMLDivElement>) => {
@@ -1045,8 +853,6 @@ export const TableColumnContainer = (
                 [styles.center]: props.columns[props.columnIndex].align === 'center',
                 [styles.compact]: props.size === 'compact',
                 [styles.dataRow]: isDataRow,
-                [styles.draggedOverBottom]: isDataRow && props.isDraggedOver === 'bottom',
-                [styles.draggedOverTop]: isDataRow && props.isDraggedOver === 'top',
                 [styles.dragging]: isDataRow && isDragging,
                 [styles.large]: props.size === 'large',
                 [styles.left]: props.columns[props.columnIndex].align === 'start',
@@ -1324,6 +1130,9 @@ const columnLabelMap: Record<TableColumn, ReactNode | string> = {
     [TableColumn.CHANNELS]: i18n.t('table.column.channels', { postProcess: 'upperCase' }) as string,
     [TableColumn.CODEC]: i18n.t('table.column.codec', { postProcess: 'upperCase' }) as string,
     [TableColumn.COMMENT]: i18n.t('table.column.comment', { postProcess: 'upperCase' }) as string,
+    [TableColumn.COMPOSER]: i18n.t('table.config.label.composer', {
+        postProcess: 'upperCase',
+    }) as string,
     [TableColumn.DATE_ADDED]: i18n.t('table.column.dateAdded', {
         postProcess: 'upperCase',
     }) as string,
@@ -1373,6 +1182,9 @@ const columnLabelMap: Record<TableColumn, ReactNode | string> = {
         postProcess: 'upperCase',
     }) as string,
     [TableColumn.TITLE]: i18n.t('table.column.title', { postProcess: 'upperCase' }) as string,
+    [TableColumn.TITLE_ARTIST]: i18n.t('table.column.title', {
+        postProcess: 'upperCase',
+    }) as string,
     [TableColumn.TITLE_COMBINED]: i18n.t('table.column.title', {
         postProcess: 'upperCase',
     }) as string,
@@ -1386,9 +1198,11 @@ const columnLabelMap: Record<TableColumn, ReactNode | string> = {
             <Icon icon="favorite" />
         </Flex>
     ),
-    [TableColumn.USER_RATING]: i18n.t('table.column.rating', {
-        postProcess: 'upperCase',
-    }) as string,
+    [TableColumn.USER_RATING]: (
+        <Flex className={styles.headerIconWrapper}>
+            <Icon icon="star" />
+        </Flex>
+    ),
     [TableColumn.YEAR]: i18n.t('table.column.releaseYear', { postProcess: 'upperCase' }) as string,
 };
 

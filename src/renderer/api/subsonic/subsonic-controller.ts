@@ -1061,12 +1061,13 @@ export const SubsonicController: InternalControllerEndpoint = {
         }
 
         const items =
-            res.body.playlist.entry?.map((song) =>
+            res.body.playlist.entry?.map((song, index) =>
                 ssNormalize.song(
                     song,
                     apiClientProps.server,
                     context?.pathReplace,
                     context?.pathReplaceWith,
+                    index,
                 ),
             ) || [];
 
@@ -1602,6 +1603,76 @@ export const SubsonicController: InternalControllerEndpoint = {
             }
 
             return (res.body.starred?.song || []).length || 0;
+        }
+
+        const artistIds = query.albumArtistIds || query.artistIds;
+
+        if (query.albumIds || artistIds) {
+            const fromAlbumPromises: Promise<ServerInferResponses<typeof contract.getAlbum>>[] = [];
+            const artistDetailPromises: Promise<ServerInferResponses<typeof contract.getArtist>>[] =
+                [];
+
+            if (query.albumIds) {
+                for (const albumId of query.albumIds) {
+                    fromAlbumPromises.push(
+                        ssApiClient(apiClientProps).getAlbum({
+                            query: {
+                                id: albumId,
+                            },
+                        }),
+                    );
+                }
+            }
+
+            if (artistIds) {
+                for (const artistId of artistIds) {
+                    artistDetailPromises.push(
+                        ssApiClient(apiClientProps).getArtist({
+                            query: {
+                                id: artistId,
+                            },
+                        }),
+                    );
+                }
+
+                const artistResult = await Promise.all(artistDetailPromises);
+
+                const albums = artistResult.flatMap((artist) => {
+                    if (artist.status !== 200) {
+                        return [];
+                    }
+
+                    return artist.body.artist.album ?? [];
+                });
+
+                const albumIds = albums.map((album) => album.id);
+
+                for (const albumId of albumIds) {
+                    fromAlbumPromises.push(
+                        ssApiClient(apiClientProps).getAlbum({
+                            query: {
+                                id: albumId.toString(),
+                            },
+                        }),
+                    );
+                }
+            }
+
+            let results: z.infer<typeof ssType._response.song>[] = [];
+
+            if (fromAlbumPromises.length > 0) {
+                const albumsResult = await Promise.all(fromAlbumPromises);
+
+                results = albumsResult.flatMap((album) => {
+                    if (album.status !== 200) {
+                        return [];
+                    }
+
+                    return album.body.album.song;
+                });
+            }
+
+            return results.length;
         }
 
         let totalRecordCount = 0;
